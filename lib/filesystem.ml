@@ -88,9 +88,11 @@ let file ~name =
 
 module Style =
   [%css
-  stylesheet {|
+  stylesheet
+    {|
 .directory {
   padding-left: 2rem;
+  border: solid white 1px;
 }
           |}]
 
@@ -114,70 +116,79 @@ let rec directory ~(name : string Value.t) : Vdom.Node.t Computation.t =
          match%arr collapsed with true -> "[+]" | false -> "[-]"
        in
        let%sub theme = View.Theme.current in
-       let%sub subdirectories =
-         Bonsai.assoc_set
-           (module String)
-           subdirectories
-           ~f:(fun name ->
-             let%sub directory = directory ~name in
-             let%arr directory = directory
-             and theme = theme
-             and remove_subdirectory = remove_subdirectory
-             and name = name in
-             View.hbox
-               ~gap:(`Rem 0.5)
-               [ directory
-               ; View.button
-                   ~intent:Error
-                   theme
-                   "Delete directory"
-                   ~on_click:(remove_subdirectory name)
-               ])
+       let%sub title =
+         let%sub add_file = dialog_button "Create file" add_file in
+         let%sub add_subdirectory =
+           dialog_button "Create directory" add_subdirectory
+         in
+         let%arr toggle_collapsed = toggle_collapsed
+         and collapsed_icon = collapsed_icon
+         and name = name
+         and add_file = add_file
+         and add_subdirectory = add_subdirectory
+         and theme = theme in
+         View.hbox
+           ~gap:(`Rem 0.5)
+           [ View.button theme ~on_click:toggle_collapsed collapsed_icon
+           ; Vdom.Node.text name
+           ; add_file
+           ; add_subdirectory
+           ]
        in
-       let%sub files =
-         Bonsai.assoc_set
-           (module String)
-           files
-           ~f:(fun name ->
-             let%sub file = file ~name in
-             let%arr file = file
-             and theme = theme
-             and remove_file = remove_file
-             and name = name in
-             View.hbox
-               ~gap:(`Rem 0.5)
-               [ file
-               ; View.button
-                   ~intent:Error
-                   theme
-                   "Delete file"
-                   ~on_click:(remove_file name)
-               ])
-       in
-       let%sub add_file = dialog_button "Create file" add_file in
-       let%sub add_subdirectory =
-         dialog_button "Create directory" add_subdirectory
-       in
-       let%arr collapsed_icon = collapsed_icon
-       and toggle_collapsed = toggle_collapsed
-       and name = name
-       and theme = theme
-       and add_file = add_file
-       and add_subdirectory = add_subdirectory
-       and subdirectories = subdirectories
-       and files = files in
-       View.vbox
-         ~attrs:[ Style.directory ]
-         [ View.hbox
-             ~gap:(`Rem 0.5)
-             [ View.button theme ~on_click:toggle_collapsed collapsed_icon
-             ; Vdom.Node.text name
-             ; add_file
-             ; add_subdirectory
-             ]
-         ; View.vbox (Map.data subdirectories)
-         ; View.vbox (Map.data files)
-         ]))
+       match%sub collapsed with
+       | true ->
+         let%arr title = title in
+         View.vbox ~attrs:[ Style.directory ] [ title ]
+       | false ->
+         let%sub subdirectories =
+           Bonsai.assoc_set
+             (module String)
+             subdirectories
+             ~f:(fun name ->
+               let%sub directory = directory ~name in
+               let%arr directory = directory
+               and theme = theme
+               and remove_subdirectory = remove_subdirectory
+               and name = name in
+               View.hbox
+                 ~gap:(`Rem 0.5)
+                 [ directory
+                 ; View.button
+                     ~intent:Error
+                     theme
+                     "Delete directory"
+                     ~on_click:(remove_subdirectory name)
+                 ])
+         in
+         let%sub files =
+           Bonsai.assoc_set
+             (module String)
+             files
+             ~f:(fun name ->
+               let%sub file = file ~name in
+               let%arr file = file
+               and theme = theme
+               and remove_file = remove_file
+               and name = name in
+               View.hbox
+                 ~gap:(`Rem 0.5)
+                 [ file
+                 ; View.button
+                     ~intent:Error
+                     theme
+                     "Delete file"
+                     ~on_click:(remove_file name)
+                 ])
+         in
+         let%arr subdirectories = subdirectories
+         and files = files
+         and title = title in
+         View.vbox
+           ~attrs:[ Style.directory ]
+           [ title
+           ; View.vbox (Map.data subdirectories)
+           ; View.vbox (Map.data files)
+           ]))
 ;;
 
 let app =
