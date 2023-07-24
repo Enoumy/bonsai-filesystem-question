@@ -1,0 +1,11 @@
+(library
+ (inline_tests)
+ (name filesystem)
+ (libraries
+  core
+  bonsai.web
+  bonsai.kado
+  bonsai.web_ui_popover
+  bonsai.web_ui_form)
+ (preprocess
+  (pps ppx_inline_test bonsai.ppx_bonsai ppx_let ppx_css)))

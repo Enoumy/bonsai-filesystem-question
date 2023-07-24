@@ -1,0 +1,8 @@
+(executable
+ (name main)
+ (modes js)
+ (libraries filesystem bonsai.web))
+
+(alias
+ (name DEFAULT)
+ (deps ./index.html))
